@@ -35,9 +35,11 @@ audit_finding:
     finding belongs in the framework. False is healthy when scope-bound.
 
   references:
+    # Allowed kind values: ADR | code | hook | governance-doc | existing-pattern-source |
+    # voice-clone-finding | voice-clone-personas | handoff-contract
     - kind: ADR
       path: ""                        # e.g., docs/decisions/ADR-...md
-    # - kind: code
+    # - kind: <allowed-kind>
     #   path: ""
 
   proposed_disposition:

@@ -1,5 +1,15 @@
 # aiox-core — Claude Code Instructions
 
+<!-- FRAMEWORK-OWNED: Constitution -->
+<!-- FRAMEWORK-OWNED: Language -->
+<!-- FRAMEWORK-OWNED: CLI First -->
+<!-- FRAMEWORK-OWNED: Estrutura -->
+<!-- FRAMEWORK-OWNED: Boundary -->
+<!-- FRAMEWORK-OWNED: Agentes -->
+<!-- FRAMEWORK-OWNED: Story-Driven -->
+<!-- FRAMEWORK-OWNED: Otimizacao -->
+<!-- FRAMEWORK-OWNED: MCP -->
+
 ## O que é
 
 AIOX (Artificial Intelligence Orchestration eXperience) — framework open-source CLI para desenvolvimento full-stack orquestrado por IA. Repo: `SynkraAI/aiox-core`, v5.0.3.
@@ -35,7 +45,7 @@ Fluxo SDC: `@sm *draft → @po *validate → @dev *develop → @qa *qa-gate → 
 
 ## Slash commands principais
 
-```
+```text
 *draft / *create-story          → @sm
 *validate-story-draft           → @po
 *execute-epic / *create-epic    → @pm
@@ -50,6 +60,13 @@ Fluxo SDC: `@sm *draft → @po *validate → @dev *develop → @qa *qa-gate → 
 - Story title/AC/scope → **somente @po** pode editar
 - Schema/DDL/migrations → **@architect** decide tecnologia, **@data-engineer** implementa
 - Qualquer violação → escalate para `@aiox-master`
+
+<!-- PROJECT-CUSTOMIZED: Padroes -->
+<!-- PROJECT-CUSTOMIZED: Testes -->
+<!-- PROJECT-CUSTOMIZED: Git -->
+<!-- PROJECT-CUSTOMIZED: Comandos -->
+<!-- PROJECT-CUSTOMIZED: Debug -->
+<!-- PROJECT-CUSTOMIZED: Tool Selection -->
 
 ## Scripts npm
 
@@ -83,7 +100,7 @@ Arquivos em `.claude/rules/` — carregados automaticamente:
 
 ## Estrutura de diretórios relevante
 
-```
+```text
 aiox-core/
 ├── .aiox-core/          ← core do framework (tasks, agents, infrastructure)
 ├── .claude/             ← este diretório (settings, hooks, rules)
