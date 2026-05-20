@@ -1,7 +1,7 @@
 metadata:
   version: 1.0.0
-  lastUpdated: '2026-05-18T16:26:51.453Z'
-  entityCount: 820
+  lastUpdated: '2026-05-20T17:25:51.033Z'
+  entityCount: 821
   checksumAlgorithm: sha256
   resolutionRate: 100
 entities:
@@ -8961,6 +8961,7 @@ entities:
         - error-registry
         - errors-index
         - serializer
+        - pro-error-registry
       dependencies: []
       externalDeps: []
       plannedDeps: []
@@ -8982,6 +8983,7 @@ entities:
       usedBy:
         - aiox-error
         - errors-index
+        - pro-error-registry
       dependencies:
         - constants
         - utils
@@ -14163,6 +14165,28 @@ entities:
         extensionPoints: []
       checksum: sha256:dd025894f8f0d3bd22a147dbc0debef8b83e96f3c59483653404b3cd5a01d5aa
       lastVerified: '2026-05-18T05:34:46.438Z'
+    pro-error-registry:
+      path: .aiox-core/core/errors/pro-error-registry.js
+      layer: L1
+      type: module
+      purpose: Entity at .aiox-core/core/errors/pro-error-registry.js
+      keywords:
+        - pro
+        - error
+        - registry
+      usedBy: []
+      dependencies:
+        - error-registry
+        - constants
+      externalDeps: []
+      plannedDeps: []
+      lifecycle: experimental
+      adaptability:
+        score: 0.4
+        constraints: []
+        extensionPoints: []
+      checksum: sha256:17aa9830cb745cb7865105d1dffd336fefb8e752d1b8baaf2357509e023d2018
+      lastVerified: '2026-05-20T17:25:51.025Z'
   agents:
     aiox-master:
       path: .aiox-core/development/agents/aiox-master.md
