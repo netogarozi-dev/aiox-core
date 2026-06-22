@@ -104,10 +104,10 @@ describe('generateImage', () => {
       (err) => {
         assert.ok(
           err instanceof ConfigurationError,
-          `esperado ConfigurationError, recebido ${err.constructor.name}`
+          `esperado ConfigurationError, recebido ${err.constructor.name}`,
         );
         return true;
-      }
+      },
     );
   });
 
@@ -117,10 +117,10 @@ describe('generateImage', () => {
       (err) => {
         assert.ok(
           err instanceof ConfigurationError,
-          `esperado ConfigurationError, recebido ${err.constructor.name}`
+          `esperado ConfigurationError, recebido ${err.constructor.name}`,
         );
         return true;
-      }
+      },
     );
   });
 
@@ -145,10 +145,10 @@ describe('generateImage', () => {
       (err) => {
         assert.ok(
           err instanceof RateLimitError,
-          `esperado RateLimitError, recebido ${err.constructor.name}`
+          `esperado RateLimitError, recebido ${err.constructor.name}`,
         );
         return true;
-      }
+      },
     );
   });
 
@@ -164,11 +164,11 @@ describe('generateImage', () => {
       (err) => {
         assert.ok(
           err instanceof StabilityApiError,
-          `esperado StabilityApiError, recebido ${err.constructor.name}`
+          `esperado StabilityApiError, recebido ${err.constructor.name}`,
         );
         assert.equal(err.statusCode, 500);
         return true;
-      }
+      },
     );
     assert.equal(callCount, 1, 'não deve fazer retry em erro 500');
   });
@@ -188,10 +188,10 @@ describe('generateImage', () => {
       (err) => {
         assert.ok(
           err instanceof TimeoutError,
-          `esperado TimeoutError, recebido ${err.constructor.name}`
+          `esperado TimeoutError, recebido ${err.constructor.name}`,
         );
         return true;
-      }
+      },
     );
   });
 

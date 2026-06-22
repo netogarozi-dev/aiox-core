@@ -38,7 +38,7 @@ export class ConfigurationError extends Error {
 function _validateConfig() {
   if (!process.env.STABILITY_API_KEY) {
     throw new ConfigurationError(
-      'STABILITY_API_KEY environment variable is required but not set'
+      'STABILITY_API_KEY environment variable is required but not set',
     );
   }
   return process.env.STABILITY_API_KEY;
