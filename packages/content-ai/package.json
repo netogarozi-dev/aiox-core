@@ -20,5 +20,8 @@
     "type": "git",
     "url": "git+https://github.com/SynkraAI/aiox-core.git",
     "directory": "packages/content-ai"
+  },
+  "dependencies": {
+    "sharp": "^0.35.2"
   }
 }
