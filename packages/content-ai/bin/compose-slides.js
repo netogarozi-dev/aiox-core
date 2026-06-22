@@ -10,7 +10,7 @@ const PROJECT_ROOT = path.resolve(PACKAGE_ROOT, '..', '..');
 const BASE_DIR = path.join(PROJECT_ROOT, 'output', 'carousel-suporte-remoto');
 const FINAL_DIR = path.join(BASE_DIR, 'final');
 const FONTS_DIR = path.join(PACKAGE_ROOT, 'assets', 'fonts');
-const LOGO_PATH = path.join(PACKAGE_ROOT, 'assets', '01 - LOGO', 'MARCA D_AGUA', '1º LOGO - PNG.png');
+const LOGO_PATH = path.join(PACKAGE_ROOT, 'assets', '01 - LOGO', 'MARCA D_AGUA', '2º LOGO - PNG.png');
 
 const CANVAS_SIZE = 1024;
 const MARGIN_X = 56;
@@ -24,10 +24,13 @@ const SUBTITLE_CHAR_WIDTH_RATIO = 0.52;
 const FOOTER_FONT_SIZE = 22;
 const FOOTER_LINE_HEIGHT = 30;
 const ACCENT_COLOR = '#00B0EA';
-const PADDING_TOP = 40;
-const PADDING_BOTTOM = 36;
+const CONTENT_BOTTOM_MARGIN = 72;
+const GRADIENT_TOP_Y = 560;
 const LOGO_TARGET_WIDTH = 180;
 const LOGO_MARGIN = 32;
+const SHADOW_OFFSET = 2;
+const SHADOW_COLOR = '#000000';
+const SHADOW_OPACITY = 0.6;
 
 const SLIDES = [
   {
@@ -112,42 +115,88 @@ async function _setupFontconfig() {
   process.env.FONTCONFIG_FILE = confPath;
 }
 
+function _textWithShadow({ lines, x, startY, lineHeight, fontFamily, fontWeight, fontSize, fill, fillOpacity = 1 }) {
+  const tspansAt = (offsetX) =>
+    lines
+      .map((line, i) => `<tspan x="${x + offsetX}" dy="${i === 0 ? 0 : lineHeight}">${_escapeXml(line)}</tspan>`)
+      .join('');
+
+  const shadow = `<text x="${x + SHADOW_OFFSET}" y="${startY + SHADOW_OFFSET}" font-family="${fontFamily}" font-weight="${fontWeight}" font-size="${fontSize}" fill="${SHADOW_COLOR}" opacity="${SHADOW_OPACITY}">${tspansAt(SHADOW_OFFSET)}</text>`;
+  const main = `<text x="${x}" y="${startY}" font-family="${fontFamily}" font-weight="${fontWeight}" font-size="${fontSize}" fill="${fill}" opacity="${fillOpacity}">${tspansAt(0)}</text>`;
+
+  return shadow + main;
+}
+
 function _buildOverlaySvg({ title, subtitle, footer }) {
   const titleLines = _wrapText(title, MAX_TEXT_WIDTH, TITLE_FONT_SIZE, TITLE_CHAR_WIDTH_RATIO);
   const subtitleLines = _wrapText(subtitle, MAX_TEXT_WIDTH, SUBTITLE_FONT_SIZE, SUBTITLE_CHAR_WIDTH_RATIO);
 
   const titleBlockHeight = titleLines.length * TITLE_LINE_HEIGHT;
-  const lineGap = 24;
+  const lineGap = 16;
+  const subtitleGap = 16;
   const subtitleBlockHeight = subtitleLines.length * SUBTITLE_LINE_HEIGHT;
   const footerGap = footer ? 16 : 0;
   const footerBlockHeight = footer ? FOOTER_LINE_HEIGHT : 0;
 
-  const overlayHeight = Math.round(
-    PADDING_TOP + titleBlockHeight + lineGap + subtitleBlockHeight + footerGap + footerBlockHeight + PADDING_BOTTOM,
-  );
+  const contentBlockHeight =
+    titleBlockHeight + lineGap + 6 + subtitleGap + subtitleBlockHeight + footerGap + footerBlockHeight;
+  const contentBottomY = CANVAS_SIZE - CONTENT_BOTTOM_MARGIN;
+  const contentTopY = contentBottomY - contentBlockHeight;
 
-  const titleTspans = titleLines
-    .map((line, i) => `<tspan x="${MARGIN_X}" dy="${i === 0 ? 0 : TITLE_LINE_HEIGHT}">${_escapeXml(line)}</tspan>`)
-    .join('');
+  const titleStartY = contentTopY + TITLE_FONT_SIZE * 0.8;
+  const lineY = contentTopY + titleBlockHeight + lineGap / 2;
+  const subtitleStartY = contentTopY + titleBlockHeight + lineGap + 6 + subtitleGap + SUBTITLE_FONT_SIZE * 0.8;
+  const footerStartY =
+    subtitleStartY + (subtitleLines.length - 1) * SUBTITLE_LINE_HEIGHT + footerGap + FOOTER_FONT_SIZE * 0.8;
 
-  const subtitleTspans = subtitleLines
-    .map((line, i) => `<tspan x="${MARGIN_X}" dy="${i === 0 ? 0 : SUBTITLE_LINE_HEIGHT}">${_escapeXml(line)}</tspan>`)
-    .join('');
+  const titleSvg = _textWithShadow({
+    lines: titleLines,
+    x: MARGIN_X,
+    startY: titleStartY,
+    lineHeight: TITLE_LINE_HEIGHT,
+    fontFamily: 'Montserrat',
+    fontWeight: 800,
+    fontSize: TITLE_FONT_SIZE,
+    fill: '#FFFFFF',
+  });
 
-  const lineY = PADDING_TOP + titleBlockHeight + 8;
-  const subtitleStartY = PADDING_TOP + titleBlockHeight + lineGap + SUBTITLE_FONT_SIZE * 0.8;
-  const footerStartY = subtitleStartY + (subtitleLines.length - 1) * SUBTITLE_LINE_HEIGHT + footerGap + FOOTER_FONT_SIZE * 0.8;
+  const subtitleSvg = _textWithShadow({
+    lines: subtitleLines,
+    x: MARGIN_X,
+    startY: subtitleStartY,
+    lineHeight: SUBTITLE_LINE_HEIGHT,
+    fontFamily: 'Ubuntu',
+    fontWeight: 700,
+    fontSize: SUBTITLE_FONT_SIZE,
+    fill: '#FFFFFF',
+    fillOpacity: 0.8,
+  });
 
   const footerSvg = footer
-    ? `<text x="${MARGIN_X}" y="${footerStartY}" font-family="Ubuntu" font-weight="700" font-size="${FOOTER_FONT_SIZE}" fill="#FFFFFF">${_escapeXml(footer)}</text>`
+    ? _textWithShadow({
+      lines: [footer],
+      x: MARGIN_X,
+      startY: footerStartY,
+      lineHeight: FOOTER_LINE_HEIGHT,
+      fontFamily: 'Ubuntu',
+      fontWeight: 700,
+      fontSize: FOOTER_FONT_SIZE,
+      fill: '#FFFFFF',
+    })
     : '';
 
   const svg = `
 <svg width="${CANVAS_SIZE}" height="${CANVAS_SIZE}" xmlns="http://www.w3.org/2000/svg">
-  <rect x="0" y="0" width="${CANVAS_SIZE}" height="${overlayHeight}" fill="#000000" opacity="0.62" />
-  <text x="${MARGIN_X}" y="${PADDING_TOP + TITLE_FONT_SIZE * 0.8}" font-family="Montserrat" font-weight="800" font-size="${TITLE_FONT_SIZE}" fill="#FFFFFF">${titleTspans}</text>
+  <defs>
+    <linearGradient id="bottomFade" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#000000" stop-opacity="0" />
+      <stop offset="100%" stop-color="#000000" stop-opacity="0.78" />
+    </linearGradient>
+  </defs>
+  <rect x="0" y="${GRADIENT_TOP_Y}" width="${CANVAS_SIZE}" height="${CANVAS_SIZE - GRADIENT_TOP_Y}" fill="url(#bottomFade)" />
+  ${titleSvg}
   <rect x="${MARGIN_X}" y="${lineY}" width="160" height="6" fill="${ACCENT_COLOR}" />
-  <text x="${MARGIN_X}" y="${subtitleStartY}" font-family="Ubuntu" font-weight="700" font-size="${SUBTITLE_FONT_SIZE}" fill="#FFFFFF" opacity="0.8">${subtitleTspans}</text>
+  ${subtitleSvg}
   ${footerSvg}
 </svg>
 `;
