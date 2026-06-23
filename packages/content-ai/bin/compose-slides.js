@@ -15,9 +15,10 @@ const LOGO_PATH = path.join(PACKAGE_ROOT, 'assets', '01 - LOGO', 'MARCA D_AGUA',
 const CANVAS_SIZE = 1024;
 const MARGIN_X = 56;
 const MAX_TEXT_WIDTH = CANVAS_SIZE - MARGIN_X * 2;
-const TITLE_FONT_SIZE = 54;
-const TITLE_LINE_HEIGHT = 64;
-const TITLE_CHAR_WIDTH_RATIO = 0.62;
+const TITLE_FONT_SIZE = 70;
+const TITLE_LINE_HEIGHT = 83;
+const TITLE_CHAR_WIDTH_RATIO = 0.72;
+const TITLE_TOP_PADDING = 60;
 const SUBTITLE_FONT_SIZE = 30;
 const SUBTITLE_LINE_HEIGHT = 40;
 const SUBTITLE_CHAR_WIDTH_RATIO = 0.52;
@@ -26,7 +27,7 @@ const FOOTER_LINE_HEIGHT = 30;
 const ACCENT_COLOR = '#00B0EA';
 const CONTENT_BOTTOM_MARGIN = 72;
 const GRADIENT_TOP_Y = 560;
-const LOGO_TARGET_WIDTH = 180;
+const LOGO_TARGET_WIDTH = 225;
 const LOGO_MARGIN = 32;
 const SHADOW_OFFSET = 2;
 const SHADOW_COLOR = '#000000';
@@ -131,21 +132,21 @@ function _buildOverlaySvg({ title, subtitle, footer }) {
   const titleLines = _wrapText(title, MAX_TEXT_WIDTH, TITLE_FONT_SIZE, TITLE_CHAR_WIDTH_RATIO);
   const subtitleLines = _wrapText(subtitle, MAX_TEXT_WIDTH, SUBTITLE_FONT_SIZE, SUBTITLE_CHAR_WIDTH_RATIO);
 
-  const titleBlockHeight = titleLines.length * TITLE_LINE_HEIGHT;
-  const lineGap = 16;
+  // Title sits in its own block at the top of the canvas.
+  const titleStartY = TITLE_TOP_PADDING + TITLE_FONT_SIZE * 0.8;
+
+  // Decorative line + subtitle + optional footer sit together at the bottom.
   const subtitleGap = 16;
   const subtitleBlockHeight = subtitleLines.length * SUBTITLE_LINE_HEIGHT;
   const footerGap = footer ? 16 : 0;
   const footerBlockHeight = footer ? FOOTER_LINE_HEIGHT : 0;
 
-  const contentBlockHeight =
-    titleBlockHeight + lineGap + 6 + subtitleGap + subtitleBlockHeight + footerGap + footerBlockHeight;
+  const bottomBlockHeight = 6 + subtitleGap + subtitleBlockHeight + footerGap + footerBlockHeight;
   const contentBottomY = CANVAS_SIZE - CONTENT_BOTTOM_MARGIN;
-  const contentTopY = contentBottomY - contentBlockHeight;
+  const bottomContentTopY = contentBottomY - bottomBlockHeight;
 
-  const titleStartY = contentTopY + TITLE_FONT_SIZE * 0.8;
-  const lineY = contentTopY + titleBlockHeight + lineGap / 2;
-  const subtitleStartY = contentTopY + titleBlockHeight + lineGap + 6 + subtitleGap + SUBTITLE_FONT_SIZE * 0.8;
+  const lineY = bottomContentTopY;
+  const subtitleStartY = bottomContentTopY + 6 + subtitleGap + SUBTITLE_FONT_SIZE * 0.8;
   const footerStartY =
     subtitleStartY + (subtitleLines.length - 1) * SUBTITLE_LINE_HEIGHT + footerGap + FOOTER_FONT_SIZE * 0.8;
 
