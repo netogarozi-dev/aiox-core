@@ -2,7 +2,7 @@ import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
 import { EventEmitter } from 'node:events';
-import { resolveOutputPath, runFfmpeg, runFfprobeDuration } from '../_shared/ffmpeg-utils.js';
+import { resolveOutputPath, runFfmpeg, runFfprobeDuration, findLatestVersionedPath } from '../_shared/ffmpeg-utils.js';
 
 describe('resolveOutputPath (AC-7 da Story 484.7: sem sobrescrita)', () => {
   test('retorna o caminho base quando o arquivo não existe', async () => {
@@ -32,6 +32,42 @@ describe('resolveOutputPath (AC-7 da Story 484.7: sem sobrescrita)', () => {
     const existing = new Set(['/out/reels-v1-mudo.mp4']);
     const existsFn = async (p) => existing.has(p.replace(/\\/g, '/'));
     const result = await resolveOutputPath('/out', 'reels-v1', '-mudo.mp4', existsFn);
+    assert.equal(result.replace(/\\/g, '/'), '/out/reels-v2-mudo.mp4');
+  });
+});
+
+describe('findLatestVersionedPath (Story 484.10: operação inversa de resolveOutputPath)', () => {
+  test('retorna null quando nenhuma versão existe', async () => {
+    const existsFn = async () => false;
+    const result = await findLatestVersionedPath('/out', 'reels-v1', '-mudo.mp4', existsFn);
+    assert.equal(result, null);
+  });
+
+  test('retorna a versão base quando só ela existe', async () => {
+    const existing = new Set(['/out/reels-v1-mudo.mp4']);
+    const existsFn = async (p) => existing.has(p.replace(/\\/g, '/'));
+    const result = await findLatestVersionedPath('/out', 'reels-v1', '-mudo.mp4', existsFn);
+    assert.equal(result.replace(/\\/g, '/'), '/out/reels-v1-mudo.mp4');
+  });
+
+  test('retorna a versão MAIS ALTA quando v1, v2 e v3 existem', async () => {
+    const existing = new Set([
+      '/out/reels-v1-mudo.mp4',
+      '/out/reels-v2-mudo.mp4',
+      '/out/reels-v3-mudo.mp4',
+    ]);
+    const existsFn = async (p) => existing.has(p.replace(/\\/g, '/'));
+    const result = await findLatestVersionedPath('/out', 'reels-v1', '-mudo.mp4', existsFn);
+    assert.equal(result.replace(/\\/g, '/'), '/out/reels-v3-mudo.mp4');
+  });
+
+  test('não pula versões: retorna v2 (não v3) quando só v1 e v2 existem', async () => {
+    const existing = new Set([
+      '/out/reels-v1-mudo.mp4',
+      '/out/reels-v2-mudo.mp4',
+    ]);
+    const existsFn = async (p) => existing.has(p.replace(/\\/g, '/'));
+    const result = await findLatestVersionedPath('/out', 'reels-v1', '-mudo.mp4', existsFn);
     assert.equal(result.replace(/\\/g, '/'), '/out/reels-v2-mudo.mp4');
   });
 });

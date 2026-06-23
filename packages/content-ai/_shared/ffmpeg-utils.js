@@ -104,3 +104,31 @@ export async function resolveOutputPath(dir, baseName, ext, existsFn = _exists) 
     version++;
   }
 }
+
+/**
+ * Operação inversa de `resolveOutputPath`: encontra a versão MAIS ALTA já
+ * existente de `{baseName}{ext}` (incrementando o sufixo `-v{n}` de
+ * `baseName`), em vez do próximo nome disponível. Retorna `null` se nem a
+ * versão base existir.
+ */
+export async function findLatestVersionedPath(dir, baseName, ext, existsFn = _exists) {
+  const versionMatch = baseName.match(/^(.*)-v(\d+)$/);
+  const stem = versionMatch ? versionMatch[1] : baseName;
+  const baseVersion = versionMatch ? parseInt(versionMatch[2], 10) : 1;
+
+  const baseCandidate = path.join(dir, `${baseName}${ext}`);
+  if (!(await existsFn(baseCandidate))) {
+    return null;
+  }
+
+  let latest = baseCandidate;
+  let version = baseVersion + 1;
+  while (true) {
+    const candidate = path.join(dir, `${stem}-v${version}${ext}`);
+    if (!(await existsFn(candidate))) {
+      return latest;
+    }
+    latest = candidate;
+    version++;
+  }
+}
