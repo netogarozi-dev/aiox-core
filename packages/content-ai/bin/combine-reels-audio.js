@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { spawn } from 'node:child_process';
+import { runFfprobeDuration, runFfmpeg, resolveOutputPath } from '../_shared/ffmpeg-utils.js';
 
 const REELS_DIR = path.resolve(process.cwd(), 'output', 'reels');
 const VIDEO_PATH = path.join(REELS_DIR, 'reels-v1-mudo.mp4');
@@ -18,88 +18,6 @@ async function _exists(p) {
   } catch {
     return false;
   }
-}
-
-export async function resolveOutputPath(dir, baseName, ext, existsFn = _exists) {
-  let candidate = path.join(dir, `${baseName}${ext}`);
-  if (!(await existsFn(candidate))) {
-    return candidate;
-  }
-
-  let version = 2;
-  while (true) {
-    const versionedName = baseName.replace(/-v1$/, `-v${version}`);
-    candidate = path.join(dir, `${versionedName}${ext}`);
-    if (!(await existsFn(candidate))) {
-      return candidate;
-    }
-    version++;
-  }
-}
-
-function _runFfprobeDuration(filePath) {
-  return new Promise((resolve, reject) => {
-    let proc;
-    try {
-      proc = spawn('ffprobe', [
-        '-v', 'error',
-        '-show_entries', 'format=duration',
-        '-of', 'default=noprint_wrappers=1:nokey=1',
-        filePath,
-      ]);
-    } catch (err) {
-      reject(err);
-      return;
-    }
-
-    let stdout = '';
-    let stderr = '';
-    proc.stdout.on('data', (chunk) => { stdout += chunk.toString(); });
-    proc.stderr.on('data', (chunk) => { stderr += chunk.toString(); });
-    proc.on('error', (err) => {
-      if (err.code === 'ENOENT') {
-        reject(new Error('Binário "ffprobe" não encontrado no PATH'));
-      } else {
-        reject(err);
-      }
-    });
-    proc.on('close', (code) => {
-      if (code === 0) {
-        resolve(parseFloat(stdout.trim()));
-      } else {
-        reject(new Error(`ffprobe saiu com código ${code}: ${stderr.slice(-500)}`));
-      }
-    });
-  });
-}
-
-export function _runFfmpeg(args, spawnFn = spawn) {
-  return new Promise((resolve, reject) => {
-    let proc;
-    try {
-      proc = spawnFn('ffmpeg', args);
-    } catch (err) {
-      reject(err);
-      return;
-    }
-
-    let stderr = '';
-    proc.stderr.on('data', (chunk) => { stderr += chunk.toString(); });
-    proc.on('error', (err) => {
-      if (err.code === 'ENOENT') {
-        reject(new Error('Binário "ffmpeg" não encontrado no PATH'));
-      } else {
-        reject(err);
-      }
-    });
-    proc.on('close', (code) => {
-      if (code === 0) {
-        resolve();
-      } else {
-        reject(new Error(`ffmpeg saiu com código ${code}: ${stderr.slice(-500)}`));
-      }
-    });
-  });
 }
 
 async function main() {
@@ -133,8 +51,8 @@ async function main() {
   let videoDuration;
   let audioDuration;
   try {
-    videoDuration = await _runFfprobeDuration(VIDEO_PATH);
-    audioDuration = await _runFfprobeDuration(resolvedAudioPath);
+    videoDuration = await runFfprobeDuration(VIDEO_PATH);
+    audioDuration = await runFfprobeDuration(resolvedAudioPath);
   } catch (err) {
     _log({ event: 'reels.audio.error', message: err.message, ts: new Date().toISOString() });
     process.stderr.write(`Falha ao inspecionar durações: ${err.message}\n`);
@@ -168,7 +86,7 @@ async function main() {
   args.push(outputPath);
 
   try {
-    await _runFfmpeg(args);
+    await runFfmpeg(args);
   } catch (err) {
     _log({ event: 'reels.audio.error', message: err.message, ts: new Date().toISOString() });
     process.stderr.write(`Falha na combinação: ${err.message}\n`);
