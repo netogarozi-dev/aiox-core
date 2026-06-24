@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { spawn } from 'node:child_process';
+import { runFfprobeDuration, runFfmpeg, resolveOutputPath, findLatestVersionedPath } from '../_shared/ffmpeg-utils.js';
 
 const REELS_DIR = path.resolve(process.cwd(), 'output', 'reels');
-const VIDEO_PATH = path.join(REELS_DIR, 'reels-v1-mudo.mp4');
+const VIDEO_BASENAME = 'reels-v1';
+const VIDEO_SUFFIX = '-mudo.mp4';
 const OUTPUT_BASENAME = 'reels-suporte-remoto-v1';
 
 function _log(data) {
@@ -20,88 +21,6 @@ async function _exists(p) {
   }
 }
 
-export async function resolveOutputPath(dir, baseName, ext, existsFn = _exists) {
-  let candidate = path.join(dir, `${baseName}${ext}`);
-  if (!(await existsFn(candidate))) {
-    return candidate;
-  }
-
-  let version = 2;
-  while (true) {
-    const versionedName = baseName.replace(/-v1$/, `-v${version}`);
-    candidate = path.join(dir, `${versionedName}${ext}`);
-    if (!(await existsFn(candidate))) {
-      return candidate;
-    }
-    version++;
-  }
-}
-
-function _runFfprobeDuration(filePath) {
-  return new Promise((resolve, reject) => {
-    let proc;
-    try {
-      proc = spawn('ffprobe', [
-        '-v', 'error',
-        '-show_entries', 'format=duration',
-        '-of', 'default=noprint_wrappers=1:nokey=1',
-        filePath,
-      ]);
-    } catch (err) {
-      reject(err);
-      return;
-    }
-
-    let stdout = '';
-    let stderr = '';
-    proc.stdout.on('data', (chunk) => { stdout += chunk.toString(); });
-    proc.stderr.on('data', (chunk) => { stderr += chunk.toString(); });
-    proc.on('error', (err) => {
-      if (err.code === 'ENOENT') {
-        reject(new Error('Binário "ffprobe" não encontrado no PATH'));
-      } else {
-        reject(err);
-      }
-    });
-    proc.on('close', (code) => {
-      if (code === 0) {
-        resolve(parseFloat(stdout.trim()));
-      } else {
-        reject(new Error(`ffprobe saiu com código ${code}: ${stderr.slice(-500)}`));
-      }
-    });
-  });
-}
-
-export function _runFfmpeg(args, spawnFn = spawn) {
-  return new Promise((resolve, reject) => {
-    let proc;
-    try {
-      proc = spawnFn('ffmpeg', args);
-    } catch (err) {
-      reject(err);
-      return;
-    }
-
-    let stderr = '';
-    proc.stderr.on('data', (chunk) => { stderr += chunk.toString(); });
-    proc.on('error', (err) => {
-      if (err.code === 'ENOENT') {
-        reject(new Error('Binário "ffmpeg" não encontrado no PATH'));
-      } else {
-        reject(err);
-      }
-    });
-    proc.on('close', (code) => {
-      if (code === 0) {
-        resolve();
-      } else {
-        reject(new Error(`ffmpeg saiu com código ${code}: ${stderr.slice(-500)}`));
-      }
-    });
-  });
-}
-
 async function main() {
   const audioPath = process.argv[2];
 
@@ -114,13 +33,15 @@ async function main() {
   const resolvedAudioPath = path.resolve(process.cwd(), audioPath);
   const startedAt = Date.now();
 
-  _log({ event: 'reels.audio.start', videoPath: VIDEO_PATH, audioPath: resolvedAudioPath, ts: new Date().toISOString() });
+  const videoPath = await findLatestVersionedPath(REELS_DIR, VIDEO_BASENAME, VIDEO_SUFFIX);
 
-  if (!(await _exists(VIDEO_PATH))) {
-    _log({ event: 'reels.audio.error', message: `Vídeo mudo não encontrado: ${VIDEO_PATH}`, ts: new Date().toISOString() });
-    process.stderr.write(`Falha: vídeo mudo não encontrado em ${VIDEO_PATH} — execute generate-reels-video.js primeiro\n`);
+  if (!videoPath) {
+    _log({ event: 'reels.audio.error', message: 'Nenhum vídeo mudo encontrado em output/reels/ — execute generate-reels-video.js primeiro', ts: new Date().toISOString() });
+    process.stderr.write('Falha: nenhum vídeo mudo encontrado em output/reels/ — execute generate-reels-video.js primeiro\n');
     process.exit(1);
   }
+
+  _log({ event: 'reels.audio.start', videoPath, audioPath: resolvedAudioPath, ts: new Date().toISOString() });
 
   if (!(await _exists(resolvedAudioPath))) {
     _log({ event: 'reels.audio.error', message: `Arquivo de áudio não encontrado: ${resolvedAudioPath}`, ts: new Date().toISOString() });
@@ -133,8 +54,8 @@ async function main() {
   let videoDuration;
   let audioDuration;
   try {
-    videoDuration = await _runFfprobeDuration(VIDEO_PATH);
-    audioDuration = await _runFfprobeDuration(resolvedAudioPath);
+    videoDuration = await runFfprobeDuration(videoPath);
+    audioDuration = await runFfprobeDuration(resolvedAudioPath);
   } catch (err) {
     _log({ event: 'reels.audio.error', message: err.message, ts: new Date().toISOString() });
     process.stderr.write(`Falha ao inspecionar durações: ${err.message}\n`);
@@ -143,7 +64,7 @@ async function main() {
 
   const audioLongerThanVideo = audioDuration > videoDuration;
 
-  const args = ['-y', '-i', VIDEO_PATH, '-i', resolvedAudioPath];
+  const args = ['-y', '-i', videoPath, '-i', resolvedAudioPath];
   if (audioLongerThanVideo) {
     // Áudio mais longo que o vídeo: congela o último frame até o fim do áudio (AC-6).
     // Requer re-encode do vídeo (tpad não é compatível com -c:v copy).
@@ -168,7 +89,7 @@ async function main() {
   args.push(outputPath);
 
   try {
-    await _runFfmpeg(args);
+    await runFfmpeg(args);
   } catch (err) {
     _log({ event: 'reels.audio.error', message: err.message, ts: new Date().toISOString() });
     process.stderr.write(`Falha na combinação: ${err.message}\n`);
